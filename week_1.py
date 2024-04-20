@@ -1,0 +1,50 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# Load dataset with dtype parameter to handle mixed types warning
+data = pd.read_csv('movies_metadata.csv', dtype={'id': str})
+
+# Select relevant columns
+data = data[['overview', 'genres']]
+
+# Remove rows with missing values
+data = data.dropna()
+
+# Split the 'genres' column into a list of genres
+data['genres'] = data['genres'].apply(lambda x: [genre['name'] for genre in eval(x)])
+
+# Combine all genres into a single string separated by commas
+data['genres'] = data['genres'].apply(lambda x: ', '.join(x))
+
+# Split data into features (X) and target variable (y)
+X = data['overview']
+y = data['genres']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize TF-IDF vectorizer
+tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+
+# Fit and transform the training data
+X_train_tfidf = tfidf_vectorizer.fit_transform(X_train)
+
+# Transform the testing data
+X_test_tfidf = tfidf_vectorizer.transform(X_test)
+
+# Initialize Logistic Regression classifier
+clf = LogisticRegression(max_iter=1000)
+
+# Train the classifier
+clf.fit(X_train_tfidf, y_train)
+
+# Predict the genres of testing data
+y_pred = clf.predict(X_test_tfidf)
+
+# Evaluate the performance of the classifier
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy)
+print(y_pred)
